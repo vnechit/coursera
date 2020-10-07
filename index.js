@@ -1,8 +1,12 @@
 /**
- * @param {Number} a Первое слагаемое
- * @param {Number} b Второе слагаемое
- * @returns {Number}
+ * @param {Number} hours
+ * @param {Number} minutes
+ * @param {Number} interval
+ * @returns {String}
  */
-module.exports = function (a, b) {
-    return Number(a) + Number(b);
+module.exports = function (hours, minutes, interval) {
+    minutes += interval;
+    if (minutes > 59){
+
+    }
 };
