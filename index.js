@@ -1,18 +1,24 @@
 /**
- * @param {String} tweet
- * @returns {String[]}
+ * @param {String[]} hashtags
+ * @returns {String}
  */
-module.exports = function (tweet) {
+module.exports = function (hashtags) {
 
-    var splittedString = tweet.split(' ');
-    var result = [];
+    var unreapettedHashtags = [];
 
-    for (var i = 0; i < splittedString.length; i++){
-        if (splittedString[i].startsWith('#')){
-            result.push(splittedString[i].slice(1, splittedString[i].length));
-        }
+    if (hashtags.length == 0){
+        return '';
     }
 
-    return result;
+    for (var i = 0; i < hashtags.length; i++){
+
+        var hashtag = hashtags[i].toLowerCase();
+        if (!unreapettedHashtags.includes(hashtag)){
+            unreapettedHashtags.push(hashtag);
+        }
+
+    }
+
+    return unreapettedHashtags.join(', ');
 
 };
