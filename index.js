@@ -1,77 +1,94 @@
 /**
- * @param {String} date
- * @returns {Object}
+ * @param {Array} collection
+ * @params {Function[]} – Функции для запроса
+ * @returns {Array}
  */
-module.exports = function (date) {
-    var dateArr = date.match(/\d{1,4}/g, date);
-    var tmpdate = new Date(Date.UTC(dateArr[0], dateArr[1]-1, dateArr[2], dateArr[3], dateArr[4], 0, 0));
+function query(collection) {
+    var args = [].slice.call(arguments);
+    var argArr = [];
 
-    var dateObject = {
-        value: String(dateArr[0])+'-'+String(dateArr[1])+'-'+String(dateArr[2])+' '+String(dateArr[3])+':'+String(dateArr[4]),
-        add: function (num, str) {
-            var tmparr = this.value.match(/\d{1,4}/g, this.value);
-            var tmpd = new Date(Date.UTC(tmparr[0], tmparr[1]-1, tmparr[2], tmparr[3], tmparr[4], 0, 0));
-            if (num < 0) {
-                throw new TypeError('Передано неверное значение: ' + num);
-            }
-
-            if (str === 'hours') {
-                tmpd.setUTCHours(tmpd.getUTCHours() + num);
-            } else if (str === 'years') {
-                tmpd.setUTCFullYear(tmpd.getUTCFullYear() + num);
-            } else if (str === 'months') {
-                tmpd.setUTCMonth(tmpd.getUTCMonth() + num);
-            } else if (str === 'days') {
-                tmpd.setUTCDate(tmpd.getUTCDate() + num);
-            } else if (str === 'minutes') {
-                tmpd.setUTCMinutes(tmpd.getUTCMinutes() + num);
-            } else {
-                throw new TypeError('Передано неверное значение: ' + str);
-            }
-            var tmp = tmpd.toLocaleString("ru",{timeZone : "UTC"});
-            tmparr = tmp.match(/\d{1,4}/g, this.value);
-            for (var i = 0; i < tmparr.length; ++i) {
-                if (Number(tmparr[i]) < 10 && tmparr[i].length < 2) {
-                    tmparr[i] = '0' + tmparr[i];
-                }
-            }
-            this.value = tmparr[0]+'-'+tmparr[1]+'-'+tmparr[2]+' '+tmparr[3]+':'+tmparr[4];
-            return this;
-        },
-        subtract: function (num, str) {
-            var tmparr = this.value.match(/\d{1,4}/g, this.value);
-            var tmpd = new Date(Date.UTC(tmparr[0], tmparr[1]-1, tmparr[2], tmparr[3], tmparr[4], 0, 0));
-            if (num < 0) {
-                throw new TypeError('Передано неверное значение: ' + num);
-            }
-
-            if (str === 'hours') {
-                tmpd.setUTCHours(tmpd.getUTCHours() - num);
-            } else if (str === 'years') {
-                tmpd.setUTCFullYear(tmpd.getUTCFullYear() - num);
-            } else if (str === 'months') {
-                tmpd.setUTCMonth(tmpd.getUTCMonth() - num);
-            } else if (str === 'days') {
-                tmpd.setUTCDate(tmpd.getUTCDate() - num);
-            } else if (str === 'minutes') {
-                tmpd.setUTCMinutes(tmpd.getUTCMinutes() - num);
-            } else {
-                throw new TypeError('Передано неверное значение: ' + str);
-            }
-            var tmp = tmpd.toLocaleString("ru",{timeZone : "UTC"});
-            tmparr = tmp.match(/\d{1,4}/g, this.value);
-            for (var i = 0; i < tmparr.length; ++i) {
-                if (Number(tmparr[i]) < 10 && tmparr[i].length < 2) {
-                    tmparr[i] = '0' + tmparr[i];
-                }
-            }
-            this.value = tmparr[0]+'-'+tmparr[1]+'-'+tmparr[2]+' '+tmparr[3]+':'+tmparr[4];
-            return this;
+    for (var i = 0; i < args[0].length; ++i) {
+        var clone = {};
+        for (var keyI in args[0][i]) {
+            clone[keyI] = args[0][i][keyI];
         }
+        argArr.push(clone);
+    }
 
-    };
+    for (var i = 1; i < args.length; ++i) {
+        var arr = args[i].slice();
+        var tmpArr = [];
 
+        if (arr[0] === 'filterIn') {
+            var property = arr[1][0];
+            var values = arr[1][1];
 
-    return dateObject;
+            for (var j = 0; j < argArr.length; ++j) {
+                if (argArr[j][property] !== undefined) {
+                    for (var k = 0; k < values.length; ++k) {
+                        if (argArr[j][property] === values[k]) {
+                            tmpArr.push(argArr[j]);
+                        }
+                    }
+                }
+            }
+            argArr = tmpArr;
 
+        }
+    }
+
+    for (var i = 1; i < args.length; ++i) {
+        var arr = args[i].slice();
+
+        if (arr[0] === 'select') {
+            var fields = arr[1];
+            for (var j = 0; j < argArr.length; ++j) {
+                var keys = Object.keys(argArr[j]);
+                for (var t = 0; t < keys.length; ++t) {
+                    var key = keys[t];
+                    var value = argArr[j][key];
+                    var flag = true;
+                    for (var k = 0; k < fields.length; ++k) {
+                        if (argArr[j][fields[k]] !== undefined) {
+                            if (key !== fields[k]) {
+                                flag = false;
+                            } else {
+                                flag = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (flag === false) {
+                        delete argArr[j][key];
+                    }
+                }
+            }
+
+        }
+    }
+
+    return argArr;
+}
+
+/**
+ * @params {String[]}
+ */
+function select() {
+    var fields = [].slice.call(arguments);
+    return ['select', fields];
+}
+
+/**
+ * @param {String} property – Свойство для фильтрации
+ * @param {Array} values – Массив разрешённых значений
+ */
+function filterIn(property, values) {
+    var fields = [].slice.call(arguments);
+    return ['filterIn', fields];
+}
+
+module.exports = {
+    query: query,
+    select: select,
+    filterIn: filterIn
 };
